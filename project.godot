@@ -1,0 +1,99 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[ {
+"base": "Reference",
+"class": "Fn",
+"language": "GDScript",
+"path": "res://Fn.gd"
+}, {
+"base": "Reference",
+"class": "Game",
+"language": "GDScript",
+"path": "res://Game.gd"
+}, {
+"base": "Reference",
+"class": "Inventory",
+"language": "GDScript",
+"path": "res://Inventory.gd"
+}, {
+"base": "Reference",
+"class": "ItemType",
+"language": "GDScript",
+"path": "res://ItemType.gd"
+}, {
+"base": "Reference",
+"class": "Plant",
+"language": "GDScript",
+"path": "res://plants.gd"
+}, {
+"base": "Reference",
+"class": "Player",
+"language": "GDScript",
+"path": "res://Player.gd"
+} ]
+_global_script_class_icons={
+"Fn": "",
+"Game": "",
+"Inventory": "",
+"ItemType": "",
+"Plant": "",
+"Player": ""
+}
+
+[application]
+
+config/name="20 . 01. Grid Game"
+run/main_scene="res://Menu.tscn"
+config/icon="res://icon.png"
+
+[display]
+
+window/size/width=300
+
+[global]
+
+clear=false
+
+[gui]
+
+common/drop_mouse_on_gui_input_disabled=true
+theme/custom_font="res://kenney_mini.tres"
+
+[input]
+
+up={
+"deadzone": 0.5,
+"events": [  ]
+}
+down={
+"deadzone": 0.5,
+"events": [  ]
+}
+left={
+"deadzone": 0.5,
+"events": [  ]
+}
+right={
+"deadzone": 0.5,
+"events": [  ]
+}
+
+[physics]
+
+common/enable_pause_aware_picking=true
+
+[rendering]
+
+quality/driver/driver_name="GLES2"
+vram_compression/import_etc=true
+vram_compression/import_etc2=false
+environment/default_clear_color=Color( 0.176471, 0, 0, 1 )
+environment/default_environment="res://default_env.tres"
