@@ -13,7 +13,7 @@ var growth_amt: int
 func harvest():
 	on_harvested.exec([self])
 
-func tick(amt: int, flor: Game.Floor):
+func tick(amt: int, flor: GameFloor):
 	if growth_amt >= grow_time:
 		return
 	

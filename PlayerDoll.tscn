@@ -10,3 +10,5 @@ region = Rect2( 425, 17, 16, 16 )
 [node name="Me" type="Sprite"]
 texture = SubResource( 1 )
 script = ExtResource( 2 )
+
+[node name="Node2D" type="Node2D" parent="."]

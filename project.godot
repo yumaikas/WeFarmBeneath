@@ -10,6 +10,11 @@ config_version=4
 
 _global_script_classes=[ {
 "base": "Reference",
+"class": "Coin",
+"language": "GDScript",
+"path": "res://items/coins.gd"
+}, {
+"base": "Reference",
 "class": "Fn",
 "language": "GDScript",
 "path": "res://Fn.gd"
@@ -20,9 +25,9 @@ _global_script_classes=[ {
 "path": "res://Game.gd"
 }, {
 "base": "Reference",
-"class": "Inventory",
+"class": "GameFloor",
 "language": "GDScript",
-"path": "res://Inventory.gd"
+"path": "res://Game/GameFloor.gd"
 }, {
 "base": "Reference",
 "class": "ItemType",
@@ -38,14 +43,27 @@ _global_script_classes=[ {
 "class": "Player",
 "language": "GDScript",
 "path": "res://Player.gd"
+}, {
+"base": "Reference",
+"class": "Proxy",
+"language": "GDScript",
+"path": "res://Autoloads/Utils/CoroProxy.gd"
+}, {
+"base": "Reference",
+"class": "ValueRange",
+"language": "GDScript",
+"path": "res://Autoloads/Utils/ValueRange.gd"
 } ]
 _global_script_class_icons={
+"Coin": "",
 "Fn": "",
 "Game": "",
-"Inventory": "",
+"GameFloor": "",
 "ItemType": "",
 "Plant": "",
-"Player": ""
+"Player": "",
+"Proxy": "",
+"ValueRange": ""
 }
 
 [application]
@@ -54,9 +72,22 @@ config/name="20 . 01. Grid Game"
 run/main_scene="res://Menu.tscn"
 config/icon="res://icon.png"
 
+[autoload]
+
+Util="*res://Autoloads/Util.gd"
+Inventory="*res://Autoloads/Inventory.gd"
+D="*res://Autoloads/Utils/Done.gd"
+
+[debug]
+
+gdscript/warnings/shadowed_variable=false
+
 [display]
 
 window/size/width=300
+window/handheld/orientation="portrait"
+window/stretch/mode="2d"
+window/stretch/aspect="keep"
 
 [global]
 
