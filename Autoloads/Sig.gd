@@ -65,7 +65,6 @@ func immediate_script(script):
 
 func bind_instance(to):
 	instance = to
-	var meta = {}
 	load_method_table(to)
 
 func _r_push(e):
