@@ -13,7 +13,6 @@ func _ready():
 	var _junk = gameState.connect("game_sync", self, "_on_game_sync")
 	Inventory.setup(null)
 
-
 func _process(_delta):
 	if Input.is_action_just_pressed("up"):
 		gameState.do_event("move_player", {"dir": Vector2(0, -1)})

@@ -35,7 +35,7 @@ class GameObj extends Reference:
 	const done = "completed"
 	var levels = []
 	var level_idx: int
-	var _player 
+	var _player
 	signal game_sync(me)
 
 	# Called when the node enters the scene tree for the first time.
@@ -49,7 +49,6 @@ class GameObj extends Reference:
 	var event_queue = []
 	func do_event(type: String, data: Dictionary):
 		if doing_event:
-			print("QUEUED_EVENT")
 			event_queue.append([type, data])
 			return
 
@@ -59,7 +58,6 @@ class GameObj extends Reference:
 			var etype = evt[0]
 			var edata = evt[1]
 			yield(turn_events(etype, edata), done)
-
 
 	func turn_events(type: String, data: Dictionary):
 		if doing_event:

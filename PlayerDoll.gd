@@ -15,20 +15,24 @@ var moving = false
 func wiggle():
 	if moving:
 		printerr("This should never happen in wiggle")
-		return D.one()
+		var t = create_tween()
+		t.tween_callback(self, "get", ["name"])
+		return t
 	moving = true
 	move_tween = create_tween()
 	
 	move_tween.tween_property(self, "rotation_degrees", rotation_degrees - 10, 0.125)
 	move_tween.tween_property(self, "rotation_degrees", rotation_degrees + 10, 0.125)
 	move_tween.tween_property(self, "rotation_degrees", rotation_degrees, 0.125) 
-	yield(move_tween, "finished")
-	moving = false
+	move_tween.tween_callback(self, "set", ["moving", false])
+	return move_tween
 
 func move_to(pos: Vector2):
 	if moving:
 		printerr("This should never happen in move_to")
-		return D.one()
+		var t = create_tween()
+		t.tween_callback(self, "get", ["name"])
+		return t
 	moving = true
 	move_tween = create_tween()
 	var curr_pos = map.map_to_world(coord, true)
@@ -42,5 +46,5 @@ func move_to(pos: Vector2):
 	move_tween.tween_property(self, "position:x", des_pos.x, 0.125)
 	move_tween.parallel().tween_property(self, "position:y", des_pos.y, 0.125 / 2.0).set_trans(Tween.TRANS_CIRC)
 	move_tween.tween_callback(self, "set", ["coord", pos])
-	yield(move_tween, "finished")
-	moving = false
+	move_tween.tween_callback(self, "set", ["moving", false])
+	return move_tween

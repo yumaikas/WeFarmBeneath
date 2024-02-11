@@ -34,6 +34,7 @@ class CoinObj extends Reference:
 		if inventory.has_room(item_type, amount):
 			inventory.add(item_type, amount)
 			kill()
+			doll.queue_free()
 		return D.one()
 
 	func tick(amt: int, _flor: GameFloor):
