@@ -7,9 +7,11 @@ var m
 var floatPat
 var intPat
 var IP = -1
-var stack_stack = []
+var nesting_stack = []
 var stack = []
-var trace = false
+var trace = 0
+var trace_indent = false
+var utilStack = []
 var returnStack = []
 var dict = {}
 var locals = {}
@@ -19,14 +21,44 @@ var CODE
 var errSymb = {}
 var lblSymb = {}
 var iterSymb = {}
+var prevSymb = {}
 var instance
 var instance_meta = {}
 
 var _stdlib = """
+'{ [ stack-size u< ] def
+'} [ stack-size u> - narray ] def
+'pos? [ 0 gt? ] def
+'neg? [ 0 lt? ] def
+'zero?  [ 0 eq? ] def
+'inc [ 1 + ] def
+
+'not [ [ false ] [ true ] if-else ] def
+'trace [ +trace do-block -trace ] def
+
 'if [ [ ] if-else ] def
+'do-with-scope [ get-scope u< set-scope do-block u> set-scope ] def
+'while [ get-scope +scope 
+	=old-scope =block 
+	%LOOP 
+		block old-scope do-with-scope 
+	LOOP goto-if-true
+	-scope 
+] def
+
+'each [ get-scope +scope 
+	=outer =block =arr 0 =idx
+	arr len pos? [
+		%LOOP 
+			arr idx nth block outer do-with-scope 
+			1 idx inc =idx
+		arr len idx gt? LOOP goto-if-true
+	] if
+	-scope
+] def
 """
 
-func _init():
+func _init(script=null,bind_to=null):
 	m = RegEx.new()
 	m.compile("\\S+")
 
@@ -34,19 +66,33 @@ func _init():
 	intPat.compile("^-?\\d+$")
 	floatPat = RegEx.new()
 	floatPat.compile("^-\\d+.?\\d*$")
+	if script:
+		load_script(script)
+	if bind_to:
+		bind_instance(bind_to)
 
 func load_script(script):
 	CODE = []
 	stack = []
 	locals = {}
 	var matches = m.search_all(_stdlib + script)
+	var drop = false
 	for m in matches:
-		CODE.append(m.strings[0])
+		if m.strings[0] == "-(":
+			drop = true
+		if m.strings[0] == ")-":
+			drop = false
+			continue
+		if not drop:
+			CODE.append(m.strings[0])
 
 	IP = 0
 	stop = false
+	is_error = false
+
 
 func load_method_table(of):
+
 	var id = of.get_meta("METHOD_TABLE_KEY")
 	if not id:
 		id = str(of.get_class(), of.get_script())
@@ -67,15 +113,24 @@ func bind_instance(to):
 	instance = to
 	load_method_table(to)
 
+func __pop(stack, errMsg):
+	if len(stack) == 0:
+		is_error = true
+		stop = true
+		return {errSymb: errMsg}
+	return stack.pop_back()
+
+func _u_push(e):
+	utilStack.append(e)
+
+func _u_pop():
+	return __pop(utilStack, "UTILITY STACK UNDERFLOW")
+
 func _r_push(e):
 	returnStack.append(e)
 
 func _r_pop():
-	if len(returnStack) == 0:
-		is_error = true
-		stop = true
-		return {errSymb: "RETURN UNDERFLOW"}
-	return returnStack.pop_back()
+	return __pop(returnStack, "RETURN STACK UNDERFLOW")
 
 func _push(e):
 	stack.append(e)
@@ -98,6 +153,9 @@ func _pop_special(symb):
 		is_error = true
 		stop = true
 		return {errSymb: "SPECIAL POP MISMATCH"}
+
+func _has_prefix(word, pre):
+	return typeof(word) == TYPE_STRING and word.begins_with(pre)
 	
 func _do_call(instance, inst):
 	var method = inst.substr(1)
@@ -109,11 +167,12 @@ func _do_call(instance, inst):
 		args.invert()
 
 		var ret = instance.callv(method, args)
-		print("CALL: ", instance, method, args, " RETURNED: ", ret)
+		if trace > 0:
+			print("CALL: ", instance, method, args, " RETURNED: ", ret)
 		if ret != null:
 			_push(ret)
 
-const math_ops = ["+", "-", "*", "div"]
+const math_ops = ["+", "-", "*", "div", "gt?", "lt?", "ge?", "le?", "eq?"]
 
 func math(inst):
 	var b = _pop()
@@ -126,6 +185,16 @@ func math(inst):
 		_push(a * b)
 	elif inst == "div":
 		_push(a / b)
+	elif inst == "gt?":
+		_push(a > b)
+	elif inst == "lt?":
+		_push(a < b)
+	elif inst == "ge?":
+		_push(a >= b)
+	elif inst == "le?":
+		_push(a <= b)
+	elif inst == "eq?":
+		_push(a == b)
 
 # The parameters are an attempt to make 
 # this a -very- widely compatible
@@ -138,12 +207,12 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 	stop = false
 	while IP < len(CODE) and not stop:
 		var inst = CODE[IP]
-		if trace:
-			print("TRACE: ", inst, " DATA:", stack)
+		if trace > 0:
+			print("  ".repeat(trace - 1), 
+				"TRACE: ", IP, ", ", inst, " DATA:", stack, " RETURN:", returnStack)
 		if typeof(inst) == TYPE_STRING:
 			if inst.begins_with("."):
 				_push(instance.get(inst.substr(1)))
-				
 			elif inst.begins_with(">"):
 				var val = _pop()
 				instance.set(inst.substr(1), val)
@@ -152,7 +221,8 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 			elif inst.begins_with(":"):
 				var _self = _pop()
 				_do_call(_self, inst)
-
+			elif inst.begins_with("%"):
+				locals[inst.substr(1)] = {lblSymb: IP}
 			elif inst.begins_with("$"):
 				if inst.substr(1) in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
 					_push(args[int(inst.substr(1))])
@@ -169,13 +239,23 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 				print(_pop())
 			elif inst == "self":
 				_push(instance)
+			elif inst == "len":
+				_push(len(_pop()))
 			elif inst == "swap":
 				CODE[IP] = ["PICK-DEL", [-2], [-2]]
 				continue
 			elif inst == "dup":
 				CODE[IP] = ["DUP-AT", [-1]]
+				continue
 			elif inst == "drop":
 				CODE[IP] = ["PICK-DEL", [], [-1]]
+				continue
+			elif inst == "u<":
+				CODE[IP] = ["U-PUSH"]
+				continue
+			elif inst == "u>":
+				CODE[IP] = ["U-POP"]
+				continue
 			elif inst == "_s":
 				print(stack)
 			elif inst in math_ops:
@@ -193,6 +273,10 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 				var at = _pop()
 				var arr = _pop()
 				_push(arr[at])
+			elif inst == "get":
+				var k = _pop()
+				var dict = _pop()
+				_push(dict[k])
 			elif inst == "def":
 				var block = _pop()
 				var name = _pop()
@@ -205,36 +289,38 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 				# so that when we hit the end
 				# we return to that instruction
 				if cond:
+					if trace_indent:
+						trace+=1
 					_r_push(IP+1)
 					IP = true_lbl[lblSymb]
 					continue
 				else:
+					if trace_indent:
+						trace+=1
 					_r_push(IP+1)
 					IP = false_lbl[lblSymb]
 					continue
-			elif inst == "each":
-				var blockdef = _pop()
-				var iter = _pop()
-				CODE[IP] = ["EACH", blockdef, {
-					"idx": 0,
-					"iter": iter
-				}]
-				continue
-			elif inst == "trace":
-				var blockdef = _pop_special(lblSymb)
-				trace = true
-				_r_push(IP)
-				CODE[IP] = ["TRACE"]
-				IP = blockdef[lblSymb]
-				continue
-			elif inst == "{":
-				stack_stack.append(stack.duplicate())
-			elif inst == "}":
-				var prev_stack = stack_stack.pop_back()
-				var new_elems = stack.slice(len(prev_stack), len(stack))
-				prev_stack.append(new_elems)
-				stack = prev_stack
-
+			elif inst == "+scope":
+				var old_locals = locals
+				locals = { prevSymb: old_locals }
+			elif inst == "-scope":
+				var old_locals = locals[prevSymb]
+				locals = old_locals
+			elif inst == "get-scope":
+				_push(locals)
+			elif inst == "set-scope":
+				locals = _pop()
+			elif inst == "+trace":
+				trace += 1
+			elif inst == "-trace":
+				trace = max(trace - 1, 0)
+			elif inst == "goto-if-true":
+				var JUMP = _pop_special(lblSymb)[lblSymb]
+				if _pop():
+					IP = JUMP
+				# Let the IP += 1 happen, so we skip the lable
+			elif inst == "stack-size":
+				_push(len(stack))
 			elif inst == "[":
 				var SEEK = IP+1
 				var DEPTH = 1
@@ -253,6 +339,8 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 				CODE[IP] = ["BLOCK-LIT", SEEK, {lblSymb: IP+1}]
 				IP -= 1
 			elif inst == "]":
+				if trace_indent:
+					trace -= 1
 				IP = _r_pop()
 				continue
 			elif inst == "true":
@@ -261,6 +349,13 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 			elif inst == "false":
 				CODE[IP] = ["LIT", false]
 				continue
+			elif inst == "do-block":
+				_r_push(IP+1)
+				if trace_indent:
+					trace += 1
+				var lbl = _pop_special(lblSymb)
+				IP = lbl[lblSymb]
+				continue
 			elif intPat.search(inst):
 				CODE[IP] = ["LIT", int(inst)]
 				continue
@@ -268,7 +363,7 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 				CODE[IP] = ["LIT", float(inst)]
 				continue
 			elif inst in dict:
-				CODE[IP] = ["CALL", dict[inst][lblSymb]]
+				CODE[IP] = ["CALL", dict[inst][lblSymb], inst]
 				continue
 			elif inst in locals:
 				CODE[IP] = ["GETVAR", inst]
@@ -285,9 +380,15 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 			elif inst[0] == "GETVAR":
 				_push(locals[inst[1]])
 			elif inst[0] == "CALL":
+				if trace_indent:
+					trace+=1
 				_r_push(IP+1)
 				IP = inst[1]
 				continue
+			elif inst[0] == "U-PUSH":
+				_u_push(_pop())
+			elif inst[0] == "U-POP":
+				_push(_u_pop())
 			elif inst[0] == "WAIT":
 				var obj = _pop()
 				obj.connect(inst[1], self, "resume")
@@ -308,20 +409,6 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 			elif inst[0] == "BLOCK-LIT":
 				IP = inst[1]
 				_push(inst[2])
-			elif inst[0] == "TRACE":
-				trace = false
-				CODE[IP] = "trace"
-			elif inst[0] == "EACH":
-				var blockdef = inst[1]
-				var iterState = inst[2]
-				if iterState.idx >= len(iterState.iter):
-					CODE[IP] = "each"
-				else:
-					_r_push(IP)
-					IP = blockdef[lblSymb]
-					_push(iterState.iter[iterState.idx])
-					iterState.idx += 1
-					continue
 			else:
 				stop = true
 				print(str("Unable to execute inst ", CODE[IP], " at ", IP))

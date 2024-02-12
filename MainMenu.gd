@@ -18,17 +18,28 @@ func test():
 	'before-wait print
 	 :@get_tree ~idle_frame 
 	'after-wait print
+	-( Test Comment )-
 	""")
 	derp.resume()
+
+	yield(derp, "script_end")
 
 	derp.load_script("$0 =a a .b :@add >c")
 	derp.resume(4)
 	print(c)
 
 	# yield(get_tree(), "idle_frame")
-	# derp.load_script("1 2 3 3 narray >c")
+	# derp.load_script("{ 1 2 3 } >c print")
 	# derp.resume()
 	# print(c)
+
+	yield(get_tree(), "idle_frame")
+	derp.load_script("+trace { 1 2 3 } [ print ] each -trace")
+	derp.resume()
+
+	yield(get_tree(), "idle_frame")
+	derp.load_script("true not print")
+	derp.resume()
 
 	# yield(get_tree(), "idle_frame")
 	# derp.load_script("false [ 'true ] [ 'false ] if-else >c")

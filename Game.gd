@@ -78,6 +78,29 @@ class GameObj extends Reference:
 		emit_signal("game_sync", self)
 		doing_event = false
 		return D.one()
+	var turn_events_vm = GDForth.new("""
+		true >doing_event
+		$0 =etype $1 =data
+		`evt? [ etype swap eq? ] def
+		`curr-level [ .levels .level_idx nth ] def
+
+
+		'tick evt? [ 
+			.levels [ =l data 'amt get l :tick ~completed ] each 
+		] if
+		'shuffle_current_floor evt? [
+			data 'itemFactory get curr-level :@shuffle_floor_items
+		] if
+		'move_player evt? [
+			data 'dir get curr-level ._player :move ~completed
+			.levels [ :tick ~completed ] each
+		] if
+		:@emit_sync
+		false >doing_event
+	""", self)
+
+	func emit_sync():
+		emit_signal("game_sync", self)
 
 	func shuffle_floor_items(itemFactory, f: GameFloor):
 		for i in f.items.values():
