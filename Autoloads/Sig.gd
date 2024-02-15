@@ -76,16 +76,12 @@ func load_script(script):
 	var toks = inputs.split(" ")
 
 	for tok in toks:
-		if tok == "":
-			continue
-		if tok == "-(":
-			drop = true
+		if tok == "": continue
+		if tok == "-(": drop = true
 		elif tok == ")-":
 			drop = false
 			continue
-		if not drop:
-			CODE.append(tok)
-
+		if not drop: CODE.append(tok)
 	IP = 0
 	stop = false
 	is_error = false
@@ -95,25 +91,16 @@ func immediate_script(script):
 	resume()
 
 func bind_instance(to): instance = to
-
 func __pop(stack, errMsg):
 	if len(stack) == 0:
 		halt_fail(); return {errSymb: errMsg}
 	return stack.pop_back()
-
 func _u_push(e): utilStack.append(e)
 func _u_pop(): return __pop(utilStack, "UTILITY STACK UNDERFLOW")
-
 func _r_push(e): returnStack.append(e)
 func _r_pop(): return __pop(returnStack, "RETURN STACK UNDERFLOW")
-
 func _push(e): stack.append(e)
-
-func _pop():
-	if len(stack) > 0: return stack.pop_back()
-	else:
-		halt_fail(); return {errSymb: "DATA UNDERFLOW"}
-	
+func _pop(): __pop(stack, "DATA UNDERFLOW")
 func _is_special(item, symb): return typeof(item) == TYPE_DICTIONARY and item.has(symb)
 
 func _pop_special(symb):
@@ -127,10 +114,8 @@ func _has_prefix(word, pre):
 	return typeof(word) == TYPE_STRING and word.begins_with(pre)
 
 const math_ops = ["+", "-", "*", "div", "gt?", "lt?", "ge?", "le?", "eq?"]
-
 func math(inst):
-	var b = _pop()
-	var a = _pop()
+	var b = _pop(); var a = _pop()
 	match inst:
 		"+": _push(a + b); "-": _push(a - b)
 		"*": _push(a * b); "div": _push(a / b)
@@ -142,16 +127,7 @@ func sig_resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,
 	if trace > 0: print("resumed from signal!")
 	resume(a0,a1,a2,a3,a4,a5,a6,a7,a8,a9)
 
-func exec():
-	pass
-
-func compile():
-	pass
-
-
-# The parameters are an attempt to make 
-# this a -very- widely compatible
-# signal handler
+# The parameters are an attempt to make this a -very- widely connectable signal handler
 func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=null,a9=null):
 	var args =[a0,a1,a2,a3,a4,a5,a6,a7,a8,a9]
 	if is_error:
