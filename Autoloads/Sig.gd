@@ -1,50 +1,44 @@
-class_name GDForth
-extends Object
+class_name GDForth extends Object
 
 signal script_end()
 
 var m
-var floatPat
-var intPat
 var IP = -1
-var nesting_stack = []
-var stack = []
-var trace = 0
-var trace_indent = false
-var utilStack = []
-var returnStack = []
-var dict = {}
-var locals = {}
-var stop = false
-var is_error = false
+var trace = 0; var trace_indent = false
+var stack = []; var utilStack = []; var returnStack = []
+var dict = {}; var locals = {}
+var stop = false; var is_error = false
 var CODE 
-var errSymb = {}
-var lblSymb = {}
-var iterSymb = {}
-var prevSymb = {}
+var errSymb = {}; var lblSymb = {}; var iterSymb = {}; var prevSymb = {}
 var instance
-var instance_meta = {}
 
 var _stdlib = """
-'{ [ stack-size u< ] def
-'} [ stack-size u> - narray ] def
-'pos? [ 0 gt? ] def
-'neg? [ 0 lt? ] def
-'zero?  [ 0 eq? ] def
-'inc [ 1 + ] def
-
+'box [ 1 narray ] def '{empty} [ 0 narray ] def
+'u<  'U-PUSH box def 'u> 'U-POP box def
+'{ [ stack-size u< ] def '} [ stack-size u> - narray ] def
+'true { 'LIT 1 1 eq? } def 'false { 'LIT 0 1 eq? } def
+'swap { 'PICK-DEL -2 box -2 box } def
+'dup { 'PICK-DEL -1 box {empty} } def  '2dup { 'PICK-DEL { -1 -2 } {empty} } def
+'drop { 'PICK-DEL {empty} -1 box } def 'nip { 'PICK-DEL {empty} -2 box } def 
+'2drop { 'PICK-DEL {empty} { -1 -2 } }
+') [ stack-size u> - narray u> u> call-method ] def
+')? [ stack-size u> - narray u> u> call-method-null ] def
+'if [ [ ] if-else ] def
+'2max [ 2dup lt? [ drop ] [ nip ] if-else ] def
+'pos? [ 0 gt? ] def  'neg? [ 0 lt? ] def  'zero? [ 0 eq? ] def
+'inc [ 1 + ] def  'dec [ 1 - ] def
+'nom [ u> dec u< ] def -( 'eat' parameters into a method call )-
+'get-scope [ VM :get( 'locals ) ] def 'set-scope [ VM :set( dup 'locals swap ) drop ] def
 'not [ [ false ] [ true ] if-else ] def
+'do-with-scope [ get-scope u< set-scope do-block u> set-scope ] def
+'vmget [ VM :get( nom ) ] def  'vmset [ swap VM :set( nom nom ) ] def
+'+trace [ 'trace vmget inc 'trace vmset ] def
+'-trace [ 'trace vmget dec 0 2max 'trace vmset ] def
 'trace [ +trace do-block -trace ] def
 
-'if [ [ ] if-else ] def
-'do-with-scope [ get-scope u< set-scope do-block u> set-scope ] def
-'while [ get-scope +scope 
-	=old-scope =block 
-	%LOOP 
-		block old-scope do-with-scope 
-	LOOP goto-if-true
-	-scope 
-] def
+'while [ get-scope +scope =old-scope =block 
+	%LOOP block old-scope do-with-scope LOOP goto-if-true
+	-scope ] def
 
 'each [ get-scope +scope 
 	=outer =block =arr 0 =idx
@@ -60,141 +54,100 @@ var _stdlib = """
 
 func _init(script=null,bind_to=null):
 	m = RegEx.new()
-	m.compile("\\S+")
+	m.compile("[\\n\\r\\s]+")
 
-	intPat = RegEx.new()
-	intPat.compile("^-?\\d+$")
-	floatPat = RegEx.new()
-	floatPat.compile("^-\\d+.?\\d*$")
 	if script:
 		load_script(script)
 	if bind_to:
 		bind_instance(bind_to)
 
+func halt_fail():
+	stop = true
+	is_error = true
+
 func load_script(script):
 	CODE = []
 	stack = []
 	locals = {}
-	var matches = m.search_all(_stdlib + script)
+	
+	var inputs = str(_stdlib, script)
 	var drop = false
-	for m in matches:
-		if m.strings[0] == "-(":
+	inputs = m.sub(inputs, " ", true)
+	var toks = inputs.split(" ")
+
+	for tok in toks:
+		if tok == "":
+			continue
+		if tok == "-(":
 			drop = true
-		if m.strings[0] == ")-":
+		elif tok == ")-":
 			drop = false
 			continue
 		if not drop:
-			CODE.append(m.strings[0])
+			CODE.append(tok)
 
 	IP = 0
 	stop = false
 	is_error = false
 
-
-func load_method_table(of):
-
-	var id = of.get_meta("METHOD_TABLE_KEY")
-	if not id:
-		id = str(of.get_class(), of.get_script())
-	if instance_meta.has(id):
-		of.set_meta("METHOD_TABLE_KEY", id)
-		return instance_meta[id]
-	var meta = {}
-	for m in of.get_method_list():
-		meta[m.name] = len(m.args)
-	instance_meta[id] = meta
-	return meta
-
-func immediate_script(script):
+func immediate_script(script): 
 	load_script(script)
 	resume()
 
-func bind_instance(to):
-	instance = to
-	load_method_table(to)
+func bind_instance(to): instance = to
 
 func __pop(stack, errMsg):
 	if len(stack) == 0:
-		is_error = true
-		stop = true
-		return {errSymb: errMsg}
+		halt_fail(); return {errSymb: errMsg}
 	return stack.pop_back()
 
-func _u_push(e):
-	utilStack.append(e)
+func _u_push(e): utilStack.append(e)
+func _u_pop(): return __pop(utilStack, "UTILITY STACK UNDERFLOW")
 
-func _u_pop():
-	return __pop(utilStack, "UTILITY STACK UNDERFLOW")
+func _r_push(e): returnStack.append(e)
+func _r_pop(): return __pop(returnStack, "RETURN STACK UNDERFLOW")
 
-func _r_push(e):
-	returnStack.append(e)
-
-func _r_pop():
-	return __pop(returnStack, "RETURN STACK UNDERFLOW")
-
-func _push(e):
-	stack.append(e)
+func _push(e): stack.append(e)
 
 func _pop():
-	if len(stack) > 0:
-		return stack.pop_back()
+	if len(stack) > 0: return stack.pop_back()
 	else:
-		is_error = true
-		stop = true
-		return {errSymb: "DATA UNDERFLOW"}
+		halt_fail(); return {errSymb: "DATA UNDERFLOW"}
 	
-func _is_special(item, symb):
-	return typeof(item) == TYPE_DICTIONARY and item.has(symb)
+func _is_special(item, symb): return typeof(item) == TYPE_DICTIONARY and item.has(symb)
 
 func _pop_special(symb):
 	if symb in stack.back():
 		return stack.pop_back()
 	else:
-		is_error = true
-		stop = true
+		halt_fail()
 		return {errSymb: "SPECIAL POP MISMATCH"}
 
 func _has_prefix(word, pre):
 	return typeof(word) == TYPE_STRING and word.begins_with(pre)
-	
-func _do_call(instance, inst):
-	var method = inst.substr(1)
-	var meta = load_method_table(instance)
-	if instance.has_method(method):
-		var args = []
-		for n in meta[method]:
-			args.append(_pop())
-		args.invert()
-
-		var ret = instance.callv(method, args)
-		if trace > 0:
-			print("CALL: ", instance, method, args, " RETURNED: ", ret)
-		if ret != null:
-			_push(ret)
 
 const math_ops = ["+", "-", "*", "div", "gt?", "lt?", "ge?", "le?", "eq?"]
 
 func math(inst):
 	var b = _pop()
 	var a = _pop()
-	if inst == "+":
-		_push(a + b)
-	elif inst == "-":
-		_push(a - b)
-	elif inst == "*":
-		_push(a * b)
-	elif inst == "div":
-		_push(a / b)
-	elif inst == "gt?":
-		_push(a > b)
-	elif inst == "lt?":
-		_push(a < b)
-	elif inst == "ge?":
-		_push(a >= b)
-	elif inst == "le?":
-		_push(a <= b)
-	elif inst == "eq?":
-		_push(a == b)
+	match inst:
+		"+": _push(a + b); "-": _push(a - b)
+		"*": _push(a * b); "div": _push(a / b)
+		"gt?": _push(a > b); "lt?": _push(a < b)
+		"ge?": _push(a >= b); "le?": _push(a <= b)
+		"eq?": _push(a == b)
+
+func sig_resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=null,a9=null):
+	if trace > 0: print("resumed from signal!")
+	resume(a0,a1,a2,a3,a4,a5,a6,a7,a8,a9)
+
+func exec():
+	pass
+
+func compile():
+	pass
+
 
 # The parameters are an attempt to make 
 # this a -very- widely compatible
@@ -211,67 +164,66 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 			print("  ".repeat(trace - 1), 
 				"TRACE: ", IP, ", ", inst, " DATA:", stack, " RETURN:", returnStack)
 		if typeof(inst) == TYPE_STRING:
-			if inst.begins_with("."):
+			if inst.begins_with("."): 
 				_push(instance.get(inst.substr(1)))
 			elif inst.begins_with(">"):
 				var val = _pop()
+				if trace > 0: print("SETTING", instance, inst.substr(1))
 				instance.set(inst.substr(1), val)
 			elif inst.begins_with(":@"):
-				_do_call(instance, inst.substr(1))
+				if inst.ends_with("("):
+					_u_push(instance)
+					_u_push(inst.substr(2,len(inst)-3))
+					_u_push(len(stack))
+				elif inst.ends_with("()"):
+					var fn = funcref(instance, inst.substr(2,len(inst)-4))
+					var ret = fn.call_func()
+					if ret != null:
+						_push(ret)
+				else:
+					is_error = true
+					stop = true
+					push_error(str("invalid call ", inst))
 			elif inst.begins_with(":"):
-				var _self = _pop()
-				_do_call(_self, inst)
+				# ( obj name stack-len )
+				if inst.ends_with("("):
+					_u_push(_pop())
+					_u_push(inst.substr(1,len(inst)-2))
+					_u_push(len(stack))
+				elif inst.ends_with("()"):
+					_dispatch(_pop(), inst.substr(1, len(inst)-3), [], false)
+				else:
+					halt_fail()
+					push_error(str("invalid call ", inst))
+			elif inst == "call-method" or inst == "call-method-null":
+				call_method(inst == "call-method-null")
 			elif inst.begins_with("%"):
 				locals[inst.substr(1)] = {lblSymb: IP}
 			elif inst.begins_with("$"):
 				if inst.substr(1) in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
 					_push(args[int(inst.substr(1))])
 				else:
-					stop = true
-					is_error = true
+					stop = true; is_error = true
 			elif inst.begins_with("'"):
 				CODE[IP] = ["LIT", inst.substr(1)]
 				continue
 			elif inst.begins_with("~"):
 				CODE[IP] = ["WAIT", inst.substr(1)]
 				continue
-			elif inst == "print":
-				print(_pop())
-			elif inst == "self":
-				_push(instance)
-			elif inst == "len":
-				_push(len(_pop()))
-			elif inst == "swap":
-				CODE[IP] = ["PICK-DEL", [-2], [-2]]
-				continue
-			elif inst == "dup":
-				CODE[IP] = ["DUP-AT", [-1]]
-				continue
-			elif inst == "drop":
-				CODE[IP] = ["PICK-DEL", [], [-1]]
-				continue
-			elif inst == "u<":
-				CODE[IP] = ["U-PUSH"]
-				continue
-			elif inst == "u>":
-				CODE[IP] = ["U-POP"]
-				continue
-			elif inst == "_s":
-				print(stack)
-			elif inst in math_ops:
-				math(inst)
+			elif inst == "print": print(_pop())
+			elif inst == "self": _push(instance)
+			elif inst == "VM": _push(self)
+			elif inst == "len": _push(len(_pop()))
+			elif inst == "_s": print(stack)
+			elif inst in math_ops: math(inst)
 			elif inst.begins_with("="):
 				locals[inst.substr(1)] = _pop()
 			elif inst == "narray":
-				var n = _pop()
-				var top = []
-				for i in n:
-					top.append(_pop())
-				top.invert()
-				_push(top)
+				var n = _pop(); var top = []
+				for i in n: top.append(_pop())
+				top.invert(); _push(top)
 			elif inst == "nth":
-				var at = _pop()
-				var arr = _pop()
+				var at = _pop(); var arr = _pop()
 				_push(arr[at])
 			elif inst == "get":
 				var k = _pop()
@@ -289,16 +241,12 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 				# so that when we hit the end
 				# we return to that instruction
 				if cond:
-					if trace_indent:
-						trace+=1
-					_r_push(IP+1)
-					IP = true_lbl[lblSymb]
+					if trace_indent: trace+=1
+					_r_push(IP+1); IP = true_lbl[lblSymb]
 					continue
 				else:
-					if trace_indent:
-						trace+=1
-					_r_push(IP+1)
-					IP = false_lbl[lblSymb]
+					if trace_indent: trace+=1
+					_r_push(IP+1); IP = false_lbl[lblSymb]
 					continue
 			elif inst == "+scope":
 				var old_locals = locals
@@ -306,18 +254,10 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 			elif inst == "-scope":
 				var old_locals = locals[prevSymb]
 				locals = old_locals
-			elif inst == "get-scope":
-				_push(locals)
-			elif inst == "set-scope":
-				locals = _pop()
-			elif inst == "+trace":
-				trace += 1
-			elif inst == "-trace":
-				trace = max(trace - 1, 0)
+			# elif inst == "set-scope": locals = _pop()
 			elif inst == "goto-if-true":
 				var JUMP = _pop_special(lblSymb)[lblSymb]
-				if _pop():
-					IP = JUMP
+				if _pop(): IP = JUMP
 				# Let the IP += 1 happen, so we skip the lable
 			elif inst == "stack-size":
 				_push(len(stack))
@@ -325,10 +265,8 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 				var SEEK = IP+1
 				var DEPTH = 1
 				while DEPTH > 0:
-					if CODE[SEEK] == "[":
-						DEPTH += 1
-					elif CODE[SEEK] == "]":
-						DEPTH -= 1
+					if CODE[SEEK] == "[": DEPTH += 1
+					elif CODE[SEEK] == "]": DEPTH -= 1
 					if SEEK > len(CODE):
 						stop = true
 						is_error = true
@@ -339,65 +277,52 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 				CODE[IP] = ["BLOCK-LIT", SEEK, {lblSymb: IP+1}]
 				IP -= 1
 			elif inst == "]":
-				if trace_indent:
-					trace -= 1
-				IP = _r_pop()
-				continue
-			elif inst == "true":
-				CODE[IP] = ["LIT", true]
-				continue
-			elif inst == "false":
-				CODE[IP] = ["LIT", false]
-				continue
+				if trace_indent: trace -= 1
+				IP = _r_pop(); continue
 			elif inst == "do-block":
 				_r_push(IP+1)
-				if trace_indent:
-					trace += 1
+				if trace_indent: trace += 1
 				var lbl = _pop_special(lblSymb)
 				IP = lbl[lblSymb]
 				continue
-			elif intPat.search(inst):
+			elif inst.is_valid_integer():
 				CODE[IP] = ["LIT", int(inst)]
 				continue
-			elif floatPat.search(inst):
+			elif inst.is_valid_float():
 				CODE[IP] = ["LIT", float(inst)]
 				continue
 			elif inst in dict:
-				CODE[IP] = ["CALL", dict[inst][lblSymb], inst]
+				if _is_special(dict[inst], lblSymb):
+					CODE[IP] = ["CALL", dict[inst][lblSymb], inst]
+				elif typeof(dict[inst]) == TYPE_ARRAY:
+					CODE[IP] = dict[inst].duplicate()
 				continue
 			elif inst in locals:
 				CODE[IP] = ["GETVAR", inst]
 				continue
 			else:
-				stop = true
-				is_error = true
+				halt_fail()
 				print("ERROR: unresolved word: ", inst, "at ", IP)
-				print(CODE)
-				
 		elif typeof(inst) == TYPE_ARRAY:
-			if inst[0] == "LIT":
-				_push(inst[1])
-			elif inst[0] == "GETVAR":
-				_push(locals[inst[1]])
+			if inst[0] == "LIT": _push(inst[1])
+			elif inst[0] == "GETVAR": _push(locals[inst[1]])
 			elif inst[0] == "CALL":
-				if trace_indent:
-					trace+=1
+				if trace_indent: trace+=1
 				_r_push(IP+1)
 				IP = inst[1]
 				continue
-			elif inst[0] == "U-PUSH":
-				_u_push(_pop())
-			elif inst[0] == "U-POP":
-				_push(_u_pop())
+			elif inst[0] == "U-PUSH": _u_push(_pop())
+			elif inst[0] == "U-POP": _push(_u_pop())
 			elif inst[0] == "WAIT":
 				var obj = _pop()
-				obj.connect(inst[1], self, "resume")
+				if not obj.is_connected(inst[1], self, "sig_resume"):
+					if trace > 0: print("connecting")
+					obj.connect(inst[1], self, "sig_resume", [], CONNECT_ONESHOT | CONNECT_DEFERRED)
+				else:
+					print(str("Already connected to ", obj))
 				stop = true
-			elif inst[0] == "DUP-AT":
-				var to_add = []
-				for idx in inst[1]:
-					to_add.append(stack[idx])
-				stack.append_array(to_add)
+				IP += 1
+				continue
 			elif inst[0] == "PICK-DEL":
 				var to_add = []
 				for idx in inst[1]:
@@ -407,8 +332,7 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 				stack.append_array(to_add)
 
 			elif inst[0] == "BLOCK-LIT":
-				IP = inst[1]
-				_push(inst[2])
+				IP = inst[1]; _push(inst[2])
 			else:
 				stop = true
 				print(str("Unable to execute inst ", CODE[IP], " at ", IP))
@@ -416,5 +340,33 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 				_push(inst)
 				break
 		IP += 1
-	if not stop:
-		emit_signal("script_end")
+	if not stop: emit_signal("script_end")
+
+func call_method(push_nulls=false):
+	var on = _pop(); var name = _pop(); var margs = _pop().duplicate()
+	print(on, name, margs, push_nulls)
+	_dispatch(on, name, margs, push_nulls)
+
+const argNames = ["a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9"]
+func _dispatch(on, name, margs, push_nulls = false):
+	if typeof(on) == TYPE_OBJECT:
+		var fn = funcref(on, name)
+		var ret = fn.call_funcv(margs)
+		if ret != null or push_nulls:
+			_push(ret)
+	else:
+		var expr = Expression.new()
+		var anames = argNames.slice(0, len(margs))
+		anames.append("m")
+		var toParse = str("m.", name,"(", ", ".join(anames), ")")
+		if expr.parse(toParse, anames) != OK:
+			stop = true
+			is_error = true
+
+		margs.append(on)
+		if trace > 0:
+			print(toParse, anames, margs)
+		var ret = expr.execute(margs)
+
+		if ret != null or push_nulls:
+			_push(ret)

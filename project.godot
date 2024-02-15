@@ -83,7 +83,6 @@ config/icon="res://icon.png"
 Util="*res://Autoloads/Util.gd"
 Inventory="*res://Autoloads/Inventory.gd"
 D="*res://Autoloads/Utils/Done.gd"
-Task="*res://Autoloads/Task.gd"
 
 [debug]
 

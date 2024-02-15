@@ -12,6 +12,7 @@ var statuses = []
 const done = "completed"
 var moveVM
 var moving = false
+var debugVM
 signal completed()
 
 func _init(frame, inventoryToUse: Inventory):
@@ -19,6 +20,7 @@ func _init(frame, inventoryToUse: Inventory):
 	self.inventory = inventoryToUse
 	moveVM = GDForth.new()
 	moveVM.bind_instance(self)
+	debugVM = GDForth.new("", moveVM)
 
 func tick(amt: int, flor: GameFloor):
 	for s in statuses:
@@ -27,51 +29,41 @@ func tick(amt: int, flor: GameFloor):
 const _move  = """
 true >moving
 $0 =dir $1 =flor
-$0 print
-$1 print
 
 'try-wait-call [ +scope 
-	=o =m =a m o :has_method [ m a o :callv ~completed ] if
+	=o =m =a o :has_method( m ) [ o :callv( m a ) ~completed ] if
 -scope ] def
 
-'get-things [ .pos flor :get_things_at ] def
+'get-things [ flor :get_things_at( .pos ) ] def
 
 'move-me-in-floor [ .pos dir + >pos ] def
 
--( Tick each of our statuses for one t )-
-'tick-statuses [ 1 flor :@tick ] def
-'move-doll-anim [ .pos .doll :move_to ~finished ] def
+-( Tick each of our statuses for 1 tick )-
+'tick-statuses [  :@tick( 1 flor ) ] def
+'move-doll-anim [ .doll :move_to( .pos ) ~finished ] def
 
 'walk-over-cell [ 
-	move-me-in-floor
-	tick-statuses
-	move-doll-anim
-
-	.pos flor :get_things_at =things
+	move-me-in-floor tick-statuses move-doll-anim
 	get-things [ =t inventory-args 'walked_over t try-wait-call ] each  
  ] def
 
 { self .inventory } =inventory-args
 
-.pos dir + flor :is_walkable 
+flor :is_walkable( .pos dir + )
 [ walk-over-cell ] [ 
 	get-things dup =things [ =t
 		inventory-args 'combat t try-wait-call
 		inventory-args 'interact t try-wait-call
 	] each
-	things len zero? [ .doll :wiggle ~finished ] if
+	things :empty() [ .doll :wiggle() ~finished ] if
 ] if-else 
 false >moving
-:@finish 
+:@emit_signal( 'completed )
 """
 
-func finish():
-	emit_signal("completed")
-
 func move(dir: Vector2, flor: GameFloor):
+	print("MOVE", moving, dir, flor)
 	if not moving:
 		moveVM.load_script(_move)
 		moveVM.resume(dir, flor)
 	return self
-
-

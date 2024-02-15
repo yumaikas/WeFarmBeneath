@@ -40,3 +40,7 @@ func makeCoinDoll(color):
 	coinDoll.set_pos_to(Vector2(0, 0))
 	coinDoll.hide()
 	return coinDoll
+
+
+func _on_LineEdit_text_entered(new_text:String):
+	player.debugVM.immediate_script(new_text)

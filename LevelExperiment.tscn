@@ -801,7 +801,6 @@ margin_bottom = 562.0
 custom_fonts/font = SubResource( 3 )
 
 [node name="Actions" type="VBoxContainer" parent="UI"]
-visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 4.0
@@ -809,6 +808,11 @@ margin_top = 43.0
 margin_right = -4.0
 margin_bottom = -4.0
 alignment = 2
+
+[node name="LineEdit" type="LineEdit" parent="UI/Actions"]
+margin_top = 30.0
+margin_right = 214.0
+margin_bottom = 60.0
 
 [node name="Shuffle" type="ToolButton" parent="UI/Actions"]
 margin_top = 64.0
@@ -904,6 +908,7 @@ script = ExtResource( 5 )
 action = "right"
 
 [node name="Bag" type="VBoxContainer" parent="UI"]
+visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = 4.0
@@ -938,4 +943,5 @@ position = Vector2( 8, 8 )
 [node name="Player" parent="Level/PlayerOffset" instance=ExtResource( 4 )]
 tilemap = NodePath("../../Floor")
 
+[connection signal="text_entered" from="UI/Actions/LineEdit" to="." method="_on_LineEdit_text_entered"]
 [connection signal="pressed" from="UI/Actions/Shuffle" to="." method="_on_shuffle_pressed"]
