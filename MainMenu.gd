@@ -35,6 +35,8 @@ func test():
 	'wait-ended print
 	+trace 1 2 'foo -trace
 
+	self :get_script() :get( 'source_code ) print
+
 	""")
 	derp.resume()
 

@@ -14,7 +14,7 @@ var instance
 
 var _stdlib = """
 'box [ 1 narray ] def '{empty} [ 0 narray ] def
-'u<  'U-PUSH box def 'u> 'U-POP box def
+'u< 'U-PUSH box def 'u> 'U-POP box def
 '{ [ stack-size u< ] def '} [ stack-size u> - narray ] def
 'true { 'LIT 1 1 eq? } def 'false { 'LIT 0 1 eq? } def
 'swap { 'PICK-DEL -2 box -2 box } def
@@ -100,7 +100,7 @@ func _u_pop(): return __pop(utilStack, "UTILITY STACK UNDERFLOW")
 func _r_push(e): returnStack.append(e)
 func _r_pop(): return __pop(returnStack, "RETURN STACK UNDERFLOW")
 func _push(e): stack.append(e)
-func _pop(): __pop(stack, "DATA UNDERFLOW")
+func _pop(): return __pop(stack, "DATA UNDERFLOW")
 func _is_special(item, symb): return typeof(item) == TYPE_DICTIONARY and item.has(symb)
 
 func _pop_special(symb):
@@ -208,6 +208,7 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 			elif inst == "def":
 				var block = _pop()
 				var name = _pop()
+				print("DEF", dict, name, block)
 				dict[name] = block
 			elif inst == "if-else":
 				var false_lbl = _pop_special(lblSymb)
@@ -279,6 +280,7 @@ func resume(a0=null,a1=null,a2=null,a3=null,a4=null,a5=null,a6=null,a7=null,a8=n
 			else:
 				halt_fail()
 				print("ERROR: unresolved word: ", inst, "at ", IP)
+				print(dict)
 		elif typeof(inst) == TYPE_ARRAY:
 			if inst[0] == "LIT": _push(inst[1])
 			elif inst[0] == "GETVAR": _push(locals[inst[1]])

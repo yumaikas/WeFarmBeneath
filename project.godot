@@ -22,7 +22,7 @@ _global_script_classes=[ {
 "base": "Object",
 "class": "GDForth",
 "language": "GDScript",
-"path": "res://Autoloads/Sig.gd"
+"path": "res://Autoloads/GDForth.gd"
 }, {
 "base": "Reference",
 "class": "Game",
