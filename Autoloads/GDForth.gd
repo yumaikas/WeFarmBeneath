@@ -12,6 +12,10 @@ var CODE
 var errSymb = {}; var lblSymb = {}; var iterSymb = {}; var prevSymb = {}
 var instance
 
+"""
+2dup lt? if drop ; nip  end
+"""
+
 var _stdlib = """
 'box [ 1 narray ] def '{empty} [ 0 narray ] def
 'u< 'U-PUSH box def 'u> 'U-POP box def

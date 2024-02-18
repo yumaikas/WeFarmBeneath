@@ -10,12 +10,20 @@ func _ready():
 
 func test():
 
+	var comp = GDForthComp.new()
+
+	comp.interpret("'asdf [[this is a test]] 123 234.4 +")
+	print(comp.stack)
+
+	return
+
 	var derp = GDForth.new()
 	derp.bind_instance(self)
 	derp.load_script("""
 	self :add( .a .b ) >c .c print
 	:@add( .a .b ) >c .c print
 
+	'{}'
 	{ { '2max 3 4 } 3 4 2max } print
 	
 	:@derp()
