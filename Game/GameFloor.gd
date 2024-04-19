@@ -48,14 +48,6 @@ func tick_all(amt: int, a: Array):
 				yield(v.tick(amt, self), done)
 	return D.one()
 
-var tick_all_vm = GDForth.new("""
-$0 =amt 
-$1 [ =d
-    d :values [ =v
-		'tick v :has_method [ amt self v :tick ~completed ] if
-	] each
-] each
-""")
 
 func reap_all(a: Array):
 	for d in a:
