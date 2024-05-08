@@ -78,11 +78,17 @@ class GameObj extends Reference:
 		emit_signal("game_sync", self)
 		doing_event = false
 		return D.one()
-	var turn_events_vm = GDForth.new("""
+		
+	onready var turn_events_vm = GDForth.new(self)
+	
+	var vm_script = """
+		
 		true >doing_event
+		
 		$0 =etype $1 =data
-		`evt? [ etype swap eq? ] def
-		`curr-level [ .levels .level_idx nth ] def
+		
+		:evt? [ etype swap eq? ] def
+		:curr-level [ .levels .level_idx nth ] def
 
 
 		'tick evt? [ 
@@ -97,7 +103,7 @@ class GameObj extends Reference:
 		] if
 		:@emit_sync
 		false >doing_event
-	""", self)
+	"""
 
 	func emit_sync():
 		emit_signal("game_sync", self)
