@@ -1,0 +1,60 @@
+[gd_resource type="Theme" load_steps=7 format=2]
+
+[ext_resource path="res://fonts/Kenney Mini.ttf" type="DynamicFontData" id=1]
+[ext_resource path="res://monochrome_transparent_2x.png" type="Texture" id=2]
+
+[sub_resource type="DynamicFont" id=1]
+size = 46
+font_data = ExtResource( 1 )
+
+[sub_resource type="AtlasTexture" id=2]
+atlas = ExtResource( 2 )
+region = Rect2( 1360, 476, 32, 32 )
+
+[sub_resource type="AtlasTexture" id=3]
+atlas = ExtResource( 2 )
+region = Rect2( 1326, 476, 32, 32 )
+
+[sub_resource type="DynamicFont" id=4]
+size = 36
+font_data = ExtResource( 1 )
+
+[resource]
+default_font = SubResource( 1 )
+Button/fonts/font = SubResource( 1 )
+CheckBox/fonts/font = SubResource( 1 )
+CheckBox/icons/checked = SubResource( 2 )
+CheckBox/icons/radio_checked = SubResource( 2 )
+CheckBox/icons/radio_unchecked = SubResource( 3 )
+CheckBox/icons/unchecked = SubResource( 3 )
+CheckButton/fonts/font = SubResource( 1 )
+ColorPickerButton/fonts/font = SubResource( 1 )
+Fonts/fonts/large = SubResource( 1 )
+Fonts/fonts/normal = SubResource( 1 )
+GraphNode/fonts/title_font = SubResource( 1 )
+ItemList/fonts/font = SubResource( 1 )
+Label/fonts/font = SubResource( 1 )
+LargeLabel/base_type = "Label"
+LargeLabel/fonts/font = SubResource( 1 )
+LineEdit/fonts/font = SubResource( 1 )
+LinkButton/fonts/font = SubResource( 1 )
+MenuButton/fonts/font = SubResource( 1 )
+OptionButton/fonts/font = SubResource( 1 )
+PopupMenu/fonts/font = SubResource( 1 )
+PopupMenu/fonts/font_separator = SubResource( 1 )
+ProgressBar/fonts/font = SubResource( 1 )
+RichTextLabel/fonts/bold_font = SubResource( 1 )
+RichTextLabel/fonts/bold_italics_font = SubResource( 1 )
+RichTextLabel/fonts/italics_font = SubResource( 1 )
+RichTextLabel/fonts/mono_font = SubResource( 1 )
+RichTextLabel/fonts/normal_font = SubResource( 1 )
+SmallLabel/base_type = "Label"
+SmallLabel/fonts/font = SubResource( 4 )
+TabContainer/fonts/font = SubResource( 1 )
+Tabs/fonts/font = SubResource( 1 )
+TextEdit/fonts/font = SubResource( 1 )
+ToolButton/fonts/font = SubResource( 1 )
+TooltipLabel/fonts/font = SubResource( 1 )
+Tree/fonts/font = SubResource( 1 )
+Tree/fonts/title_button_font = SubResource( 1 )
+WindowDialog/fonts/title_font = SubResource( 1 )
