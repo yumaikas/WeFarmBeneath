@@ -95,8 +95,8 @@
 
 ( Tools )
 : pot/boil!/enable? ( bag -- ? ) :raw swap +has-tag? ; < :bag > # inject
-: pot/boil! {  to-cook -- result cooked? } 
-    *to-cook food? [ *to-cook cook true ] [ *to-cook false ]  if-else 
+: pot/boil! {  to-cook -- ( need to get the bag interactions in here ) } 
+*to-cook food? [ *to-cook cook ] [ "Cannot cook " *to-cook .label str(**) log ]  if-else 
 ; [
     # < :bag > /pred
     # < :bag/item > /action
