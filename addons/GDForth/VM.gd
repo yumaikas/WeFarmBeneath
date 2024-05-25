@@ -483,9 +483,15 @@ func compile(tokens):
 				bind_refs[bindName] = funcref(self, bindName)
 			CODE.append(bind_refs[bindName])
 			t_idx+=1
-		elif tok.begins_with(">>") and tok != ">>" :
+		elif tok.begins_with(">>") and tok != ">>":
 			var propKey = tok.substr(2)
 			var status = compile(["it", str(">", propKey)])
+			if status.has("err"):
+				return status
+			t_idx += 1
+		elif tok.ends_with(">>") and tok != ">>":
+			var propKey = tok.substr(0, len(tok) - 2)
+			var status = compile(["it", str(".", propKey)])
 			if status.has("err"):
 				return status
 			t_idx += 1
@@ -541,6 +547,7 @@ func compile(tokens):
 			t_idx += 1
 		elif tok == "const:": 
 			var constKey = tokens[t_idx + 1]
+			dict[constKey] = len(CODE)
 			CODE.append_array([OP_CONST, constKey, OP_RETURN])
 			t_idx += 2
 		elif tok == "load:":
@@ -915,7 +922,6 @@ func OP_CONST(vm):
 	var name =  vm.CODE[vm.IP + 1]
 	vm.CODE[vm.IP] = vm.OP_LIT
 	vm.CODE[vm.IP + 1] = vm.assoc_constant(value)
-	vm.dict[name] = vm.IP
 	vm.IP += 3
 
 func OP_SET_MEMBER(vm):

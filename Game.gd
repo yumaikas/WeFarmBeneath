@@ -11,7 +11,7 @@ var _log = []
 
 func _ready():
 	forth = GDForth.new(self)
-	forth.eval(':./game.fth load')
+	forth.eval(':./project.fth load')
 	
 func switchScene(to):
 	var scn = load(to)

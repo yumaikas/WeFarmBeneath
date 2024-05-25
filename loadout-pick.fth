@@ -8,12 +8,12 @@
 
 : /has? ( -- ) it .has(*) ;
 : /ready? ( -- ) :weapon /has? :tool /has? and :magic /has? and ; 
-: /check-state ( -- ) it print ready? not :Stuff/ExitButtons/Confirm $ >disabled ;
-: /retain ( bind -- ) it .cleanup .append(*)! ;
-: /drop-all ( -- ) it .cleanup .clear()! ;
-: ->weapon ( btn -- ) .Value >>weapon check-state ;
-: ->tool ( btn -- ) .Value >>tool check-state ;
-: ->magic ( btn -- ) .Value >>magic check-state ;
+: /check-state ( -- ) it print /ready? not :Stuff/ExitButtons/Confirm $ >disabled ;
+: /retain ( bind -- ) cleanup>> .append(*)! ;
+: /drop-all ( -- ) cleanup>> .clear()! ;
+: ->weapon ( btn -- ) .Value >>weapon /check-state ;
+: ->tool ( btn -- ) .Value >>tool /check-state ;
+: ->magic ( btn -- ) .Value >>magic /check-state ;
 :: pick-loadout { cancel-to -- form }
     "res://LoadoutPicker.tscn" switch-scene
     ( :Stuff/Weapons/BtnDagger self .scene .get_node(*} .group print )

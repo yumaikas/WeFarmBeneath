@@ -1,98 +1,44 @@
 ( Goal is to be a "farm beneath" game, I think? )
-( put: abc -- b[c]=a )
-: with! ( subj block -- ... ) swap u< do-block u> drop ;
-: with ( subj block -- ... ) swap u< do-block u> ;
-: bye ( -- ) self .get_tree() .quit() suspend ;
-: log ( text -- ) self ._log.append(*) ;
-: <dict> ( block -- dict ) dict u< do-block u> ;
-: <action> ( action name -- ) [ u@ >name u@ >action ] <dict> ;
-: game ( -- game ) self .game ;
-: player-bag ( -- ) game .player.bag ;
-: splat ( < ... > -- ... ) [ ] each ;
-: inject ( deps action -- )  self .action_injections swap put ;
-: pred ( action -- ) dup :/enable? str(**) swap self .action_predicates swap put ;
-: label ( name action -- ) self .action_names swap put ;
-: level-remove ( target ) drop "level-remove not implemented yet" log  ; 
-
-: switch-scene ( scn-path -- ) self .switchScene(*)! ;
-: dLH ( l h  -- rand ) ForthUtil.randi_range(**) ;
-: d<LH> ( < l h > -- rand ) u< it 0 get u> 1 get dLH ;
-: dX ( x -- r ) 0 swap ForthUtil.randi_range(**) ;
-: d<> ( arr -- el ) dup .size() dX nth ; 
-
-: hurt ( mob amt -- ) [ swap - ] %HP ; ( TODO: Add more logic of on-hurt effects )
-
-:: any? 0 false { arr pred idx found? -- } [ 
-    *arr *idx nth *pred do-block =found 
-    [ 1+ ] %idx 
-    *found? not *arr len *idx gt? and
-] while *found? ;
-
-:: find 0 false { arr pred idx found? -- } [ 
-    *arr *idx nth *pred do-block =found 
-    [ 1+ ] %idx 
-    *found? not *arr len *idx gt? and
-] while *arr *idx *nth ;
-
-:: has-tag? { bag tag -- ? } *bag .items [ *tag .tags .has(*) ] any? ;
-: find-tagged ( bag tag ) u< .items [ .tags it swap .has(*) ] find u> drop ;
-: bag-remove ( item -- ) game .player.bag .erase(*) ;
-
-: <bag> ( size -- bag ) [ 
-    it >slots 
-    < > it >items 
-] <dict> ;
-
-: has-room? ( amt bag -- ) u< u@ .slots u> .items .size() ge? ;
-: to-mainhand ( item game -- ) .player.equips >mainhand ; 
-: to-bag { item bag -- } 1 *bag has-room? [ *item *bag .items.append(*) ] if ;
-
-load: ./cook.fth
-load: ./items.fth
-load: ./loadout-pick.fth
-load: ./magic.fth
-
-
 
 : $ ( str -- node ) .get_node(*) ; 
 
 : UP 0 -1 Vector2(**) ; : DOWN 0 1 Vector2(**) ;
 : RIGHT 1 0 Vector2(**) ; : LEFT -1 0 Vector2(**) ;
 
+: <equips> dict [
+    "" >>mainhand
+    "" >>offhand
+    "" >>torso
+    "" >>trinket
+] with ;
 
-: <equips> dict u<
-    "" it >mainhand
-    "" it >offhand
-    "" it >torso
-    "" it >trinket
-    u>
-;
+: //player.init
+    [ 0 >>currency
+      <equips> >>equips 
+      10 <bag> >>bag 
+    ] <dict> //game >player ;
 
-:: start-game { loadout -- } 
-    [ <equips> it >equips ( -- ) 10 <bag> it >bag ] <dict> game >player
-    ( Cargo is how much stuff the player can carry )
+: //player //game .player ;
+: /mainhand.equip ( item -- ) //player .equips >mainhand ; 
+: /magic.set-school ( school -- ) //player >magic ;
 
-    *loadout .weapon
-        dup "dagger" eq? [ <dagger> game to-mainhand ] if
-        dup "spear" eq?  [ <spear> game to-mainhand ] if
-        dup "axe" eq?    [ <axe> game to-mainhand  ] if
-        drop
-    *loadout .tool
-        dup "pot" eq?     [ <pot> player-bag to-bag ] if
-        dup "pickaxe" eq? [ <pickaxe> player-bag to-bag ] if
-        dup "lamp" eq?    [ <lamp> player-bag to-bag ] if
-        drop
-    *loadout .magic
-        dup "mosswitch" eq?  [ <mosswitch> game .player >magic ] if
-        dup "aurumage" eq?   [ <aurumage> game .player >magic ] if
-        dup "telemancer" eq? [ <telemancer> game .player >magic ] if
-        drop
-    game print
-;
+: apply-loadout ( loadout -- ) [ 
+    weapon>> "dagger" eq? [ <dagger> /mainhand.equip ] if
+    weapon>> "spear" eq?  [ <spear>  /mainhand.equip ] if
+    weapon>> "axe" eq?    [ <axe>    /mainhand.equip ] if
+
+    tool>> "pot" eq?     [ <pot> //bag +add ] if
+    tool>> "pickaxe" eq? [ <pickaxe> //bag +add ] if
+    tool>> "lamp" eq?    [ <lamp> //bag +add ] if
+
+    magic>> "mosswitch" eq?  [ <mosswitch>  /magic.set-school ] if
+    magic>> "aurumage" eq?   [ <aurumage>   /magic.set-school ] if
+    magic>> "telemancer" eq? [ <telemancer> /magic.set-school ] if
+] with! ;
+
+: start-game ( loadout -- ) //player.init apply-loadout //game print ;
 
 : load-game bye ;
-
-: init ( -- ) ;
 
 :: main-menu ( -- ) 
     "res://MainMenu.tscn" switch-scene
@@ -103,5 +49,4 @@ load: ./magic.fth
     :main-menu < > become
 ;
 
-init
 main-menu
