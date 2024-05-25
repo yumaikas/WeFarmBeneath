@@ -109,6 +109,7 @@ const _stdlib = """
 : not ( t/f -- f/t ) [ false ] [ true ] if-else ;
 : WRITE 2 ;
 : OK 0 ;
+: err! ( to-show -- ) VM .do_push_error(*)! ;
 : print-raw ( toprint -- ) VM .do_printraw(*)! ;
 :: load ( path -- .. ) =path File.new() =f 
 	*path @File.READ *f .open(**) dup OK eq? [ drop *f .get_as_text() eval OK ] if ;
@@ -212,7 +213,7 @@ var OP_EXEC = iota("OP_EXEC")
 var OP_GET_MEMBER = iota("OP_GET_MEMBER", 1)
 var OP_SET_MEMBER = iota("OP_SET_MEMBER", 1)
 
-var OP_DEF = iota("OP_DEF")
+var OP_CONST = iota("OP_CONST")
 
 var OP_U_PUSH = iota("OP_U_PUSH")
 var OP_U_POP = iota("OP_U_POP")
@@ -240,7 +241,7 @@ var OP_NARRAY = iota("OP_NARRAY")
 var OP_NEW_DICT = iota("OP_NEW_DICT")
 
 var OP_NTH = iota("OP_NTH")
-var OP_PUT = iota("OP_PUT")
+var OP_PUT = iota("OP_PUT") # b[c] =a
 var OP_LEN = iota("OP_LEN")
 
 var OP_SETLOCAL = iota("OP_SETLOCAL", 1)
@@ -419,7 +420,6 @@ var _comp_map = {
 	"l!0": OP_L_STORE, "l!1": OP_L_STORE_1, "l!2": OP_L_STORE_2, "l!3": OP_L_STORE_3,
 	"l<here+": OP_L_HERE_NEXT,
 	"clear-stack": OP_STACK_CLEAR,
-	"def": OP_DEF,
 	"narray": OP_NARRAY,
 	"dict": OP_NEW_DICT,
 	"put": OP_PUT, # b[c] =a
@@ -465,12 +465,12 @@ func code_gen_call(call_info, is_method):
 	codeGen.append("    vm.IP += 1\n\n")
 	return "".join(codeGen)
 	
-
 func compile(tokens):
 	var t_idx = 0
 	while t_idx < len(tokens):
 		var tok = tokens[t_idx]
-		if tok.begins_with(">") and tok != ">":
+		
+		if tok.begins_with(">") and not tok.begins_with(">>") and tok != ">":
 			var propKey = tok.substr(1)
 			var bindName = str("set_", propKey.replace(".", "_dot_"))
 			if not bind_refs.has(bindName):
@@ -483,6 +483,12 @@ func compile(tokens):
 				bind_refs[bindName] = funcref(self, bindName)
 			CODE.append(bind_refs[bindName])
 			t_idx+=1
+		elif tok.begins_with(">>") and tok != ">>" :
+			var propKey = tok.substr(2)
+			var status = compile(["it", str(">", propKey)])
+			if status.has("err"):
+				return status
+			t_idx += 1
 		elif tok.ends_with(")") or tok.ends_with(")!"):
 			var is_method = tok.begins_with(".")
 			var call_name = tok
@@ -519,6 +525,7 @@ func compile(tokens):
 				bind_refs[bindName] = funcref(self, bindName)
 			CODE.append(bind_refs[bindName])
 			t_idx += 1
+
 		elif tok.ends_with("%"):
 			var name = tok.substr(0, len(tok) - 2)
 			var status = compile([
@@ -526,12 +533,23 @@ func compile(tokens):
 				"it", str(".", name),
 				"swap",
 				"do-block",
-				"it",
+				"u>",
 				str(">", name)
 			])
 			if status.has("err"):
 				return status
 			t_idx += 1
+		elif tok == "const:": 
+			var constKey = tokens[t_idx + 1]
+			CODE.append_array([OP_CONST, constKey, OP_RETURN])
+			t_idx += 2
+		elif tok == "load:":
+			var pathToLoad = tokens[t_idx + 1]
+			var f = File.new()
+			if f.open(pathToLoad, File.READ) != OK:
+				return {"err": str("Could not load ", pathToLoad)}
+			comp(f.get_as_text())
+			t_idx += 2
 
 		elif tok.begins_with("."):
 			var propKey = tok.substr(1)
@@ -836,6 +854,7 @@ func OP_THROW(vm):
 	else:
 		vm.IP += 1
 
+
 func OP_RECOVER(vm):
 	vm.do_print("Recover is a no-op outside resuming a faulted VM")
 	vm.IP += 1
@@ -890,11 +909,15 @@ func OP_WHILE(vm):
 func OP_GET_MEMBER(vm):
 	vm._push(vm._pop().get(vm.constant_pool[vm.CODE[vm.IP+1]]))
 	vm.IP += 2
-func OP_DEF(vm):
-	var block = vm._pop()
-	var name = vm._pop()
-	vm.dict[name] = block
-	vm.IP += 1
+
+func OP_CONST(vm):
+	var value = vm._pop()
+	var name =  vm.CODE[vm.IP + 1]
+	vm.CODE[vm.IP] = vm.OP_LIT
+	vm.CODE[vm.IP + 1] = vm.assoc_constant(value)
+	vm.dict[name] = vm.IP
+	vm.IP += 3
+
 func OP_SET_MEMBER(vm):
 	var to = vm._pop()
 	var on = vm._pop()

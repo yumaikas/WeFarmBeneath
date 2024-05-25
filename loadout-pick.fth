@@ -6,28 +6,22 @@
      *bind
 ;
 
-: ready? ( -- ) 
-    :weapon it .has(*)
-    :tool it .has(*) and
-    :magic it .has(*) and 
-; 
-: check-state ( -- ) it print ready? not :Stuff/ExitButtons/Confirm $ >disabled ;
-
-: pick-weapon ( btn -- ) .Value u@ >weapon check-state ;
-: pick-tool ( btn -- ) .Value u@ >tool check-state ;
-: pick-magic ( btn -- ) .Value u@ >magic check-state ;
-
-: u@cleanup ( bind -- ) u@ .cleanup .append(*)! ;
+: /has? ( -- ) it .has(*) ;
+: /ready? ( -- ) :weapon /has? :tool /has? and :magic /has? and ; 
+: /check-state ( -- ) it print ready? not :Stuff/ExitButtons/Confirm $ >disabled ;
+: /retain ( bind -- ) it .cleanup .append(*)! ;
+: /drop-all ( -- ) it .cleanup .clear()! ;
+: ->weapon ( btn -- ) .Value >>weapon check-state ;
+: ->tool ( btn -- ) .Value >>tool check-state ;
+: ->magic ( btn -- ) .Value >>magic check-state ;
 :: pick-loadout { cancel-to -- form }
     "res://LoadoutPicker.tscn" switch-scene
     ( :Stuff/Weapons/BtnDagger self .scene .get_node(*} .group print )
-    dict u<
-    <> u@ >cleanup
-
-    :Stuff/Weapons/BtnDagger $ .group :pressed :pick-weapon vm-bind u@cleanup
-    :Stuff/Tools/BtnPot $ .group :pressed :pick-tool vm-bind u@cleanup
-    :Stuff/Magic/BtnMosswitch $ .group :pressed :pick-magic vm-bind u@cleanup
-    :Stuff/ExitButtons/Confirm $ .group ~pressed "back" eq? [ *cancel-to < > become ] if
-    u@ .cleanup.clear() ( drop the bind references now that we're done with them )
-    u>
+    dict [ <> >>cleanup 
+      :Stuff/Weapons/BtnDagger $ .group :pressed :->weapon vm-bind /retain
+      :Stuff/Tools/BtnPot $ .group :pressed :->tool vm-bind /retain
+      :Stuff/Magic/BtnMosswitch $ .group :pressed :->magic vm-bind /retain
+      :Stuff/ExitButtons/Confirm $ .group ~pressed .Value "back" eq? [ *cancel-to < > become ] if
+      /drop-all
+    ] with
 ;

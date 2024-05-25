@@ -20,11 +20,10 @@
     "The coin reforms into a dart, and flies with dread force" log
 ; < :target :player > # inject # pred # "Coin Missile" label 
 
-: <aurumage> 
-    [ 
-       "You gain power from copper, silver and gold, and find spells in gems" it >description
-       < :coin/missile > it >spells
-    ] <dict>
+: <aurumage> [ 
+   "You gain power from copper, silver and gold, and find spells in gems" it >description
+   < :coin/missile > it >spells
+] <dict>
 ;
 
 : tele/fetch/enable? { player bag -- ? } 

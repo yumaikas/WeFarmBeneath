@@ -1,16 +1,7 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=3 format=2]
 
 [ext_resource path="res://MainMenu.gd" type="Script" id=1]
-[ext_resource path="res://fonts/Kenney Mini.ttf" type="DynamicFontData" id=2]
 [ext_resource path="res://WeFarmBeneathTheme.tres" type="Theme" id=3]
-
-[sub_resource type="DynamicFont" id=1]
-size = 24
-font_data = ExtResource( 2 )
-
-[sub_resource type="DynamicFont" id=2]
-size = 32
-font_data = ExtResource( 2 )
 
 [node name="MainMenu" type="Control"]
 theme = ExtResource( 3 )
@@ -22,7 +13,6 @@ margin_top = 39.0
 margin_right = 566.0
 margin_bottom = 100.0
 theme_type_variation = "LargeLabel"
-custom_fonts/font = SubResource( 1 )
 text = "We Farm Beneath "
 align = 1
 
@@ -31,7 +21,6 @@ margin_left = 188.0
 margin_top = 476.0
 margin_right = 340.0
 margin_bottom = 524.0
-custom_fonts/font = SubResource( 2 )
 text = "Spelunk!"
 
 [connection signal="pressed" from="StartGameBtn" to="." method="_on_StartGameBtn_pressed"]

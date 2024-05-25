@@ -1,0 +1,225 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://WeFarmBeneathTheme.tres" type="Theme" id=1]
+[ext_resource path="res://Loadout.gd" type="Script" id=2]
+[ext_resource path="res://Controls/ValueCheckBox.gd" type="Script" id=3]
+[ext_resource path="res://Controls/ValueButton.gd" type="Script" id=4]
+
+[sub_resource type="ButtonGroup" id=1]
+resource_name = "WeaponsButtonGroup"
+
+[sub_resource type="ButtonGroup" id=2]
+resource_name = "ToolsButtonGroup"
+
+[sub_resource type="ButtonGroup" id=3]
+resource_name = "MagicButtonGroup"
+
+[sub_resource type="ButtonGroup" id=4]
+resource_name = "ExitButtonGroup"
+
+[node name="LoadoutUI" type="Control"]
+theme = ExtResource( 1 )
+script = ExtResource( 2 )
+
+[node name="Title" type="Label" parent="."]
+margin_left = 27.0
+margin_top = 22.0
+margin_right = 552.0
+margin_bottom = 102.0
+theme_type_variation = "LargeLabel"
+text = "Loadout"
+align = 1
+
+[node name="Stuff" type="VBoxContainer" parent="."]
+margin_left = 28.0
+margin_top = 132.0
+margin_right = 576.0
+margin_bottom = 1170.0
+
+[node name="Weapons" type="VBoxContainer" parent="Stuff"]
+margin_right = 548.0
+margin_bottom = 216.0
+
+[node name="Label" type="Label" parent="Stuff/Weapons"]
+margin_right = 548.0
+margin_bottom = 45.0
+theme_type_variation = "SmallLabel"
+text = "Weapons"
+
+[node name="BtnDagger" type="CheckBox" parent="Stuff/Weapons"]
+margin_top = 49.0
+margin_right = 548.0
+margin_bottom = 102.0
+theme_type_variation = "SmallLabel"
+group = SubResource( 1 )
+text = "Dagger"
+align = 2
+icon_align = 1
+expand_icon = true
+script = ExtResource( 3 )
+Value = "dagger"
+
+[node name="BtnAxe" type="CheckBox" parent="Stuff/Weapons"]
+margin_top = 106.0
+margin_right = 548.0
+margin_bottom = 159.0
+theme_type_variation = "SmallLabel"
+group = SubResource( 1 )
+text = "Axe"
+align = 2
+icon_align = 1
+expand_icon = true
+script = ExtResource( 3 )
+Value = "axe"
+
+[node name="BtnSpear" type="CheckBox" parent="Stuff/Weapons"]
+margin_top = 163.0
+margin_right = 548.0
+margin_bottom = 216.0
+theme_type_variation = "SmallLabel"
+group = SubResource( 1 )
+text = "Spear"
+align = 2
+icon_align = 1
+expand_icon = true
+script = ExtResource( 3 )
+Value = "spear"
+
+[node name="Tools" type="VBoxContainer" parent="Stuff"]
+margin_top = 220.0
+margin_right = 548.0
+margin_bottom = 436.0
+
+[node name="Label2" type="Label" parent="Stuff/Tools"]
+margin_right = 548.0
+margin_bottom = 45.0
+theme_type_variation = "SmallLabel"
+text = "Tools"
+
+[node name="BtnPot" type="CheckBox" parent="Stuff/Tools"]
+margin_top = 49.0
+margin_right = 548.0
+margin_bottom = 102.0
+theme_type_variation = "SmallLabel"
+group = SubResource( 2 )
+text = "Pot"
+align = 2
+icon_align = 1
+expand_icon = true
+script = ExtResource( 3 )
+Value = "pot"
+
+[node name="BtnPickaxe" type="CheckBox" parent="Stuff/Tools"]
+margin_top = 106.0
+margin_right = 548.0
+margin_bottom = 159.0
+theme_type_variation = "SmallLabel"
+group = SubResource( 2 )
+text = "Pickaxe"
+align = 2
+icon_align = 1
+expand_icon = true
+script = ExtResource( 3 )
+Value = "pickaxe"
+
+[node name="BtnLamp" type="CheckBox" parent="Stuff/Tools"]
+margin_top = 163.0
+margin_right = 548.0
+margin_bottom = 216.0
+theme_type_variation = "SmallLabel"
+group = SubResource( 2 )
+text = "Lamp"
+align = 2
+icon_align = 1
+expand_icon = true
+script = ExtResource( 3 )
+Value = "lamp"
+
+[node name="Magic" type="VBoxContainer" parent="Stuff"]
+margin_top = 440.0
+margin_right = 548.0
+margin_bottom = 656.0
+
+[node name="Label3" type="Label" parent="Stuff/Magic"]
+margin_right = 548.0
+margin_bottom = 45.0
+theme_type_variation = "SmallLabel"
+text = "Magic"
+
+[node name="BtnMosswitch" type="CheckBox" parent="Stuff/Magic"]
+margin_top = 49.0
+margin_right = 548.0
+margin_bottom = 102.0
+theme_type_variation = "SmallLabel"
+group = SubResource( 3 )
+text = "Mosswitch"
+align = 2
+icon_align = 1
+expand_icon = true
+script = ExtResource( 3 )
+Value = "mosswitch"
+
+[node name="BtnAurumage" type="CheckBox" parent="Stuff/Magic"]
+margin_top = 106.0
+margin_right = 548.0
+margin_bottom = 159.0
+theme_type_variation = "SmallLabel"
+group = SubResource( 3 )
+text = "Aurumage"
+align = 2
+icon_align = 1
+expand_icon = true
+script = ExtResource( 3 )
+Value = "aurumage"
+
+[node name="BtnTelemancer" type="CheckBox" parent="Stuff/Magic"]
+margin_top = 163.0
+margin_right = 548.0
+margin_bottom = 216.0
+theme_type_variation = "SmallLabel"
+group = SubResource( 3 )
+text = "Telemancer"
+align = 2
+icon_align = 1
+expand_icon = true
+script = ExtResource( 3 )
+Value = "telemancer"
+
+[node name="MarginContainer" type="MarginContainer" parent="Stuff"]
+margin_top = 660.0
+margin_right = 548.0
+margin_bottom = 700.0
+rect_min_size = Vector2( 0, 40 )
+
+[node name="ExitButtons" type="HBoxContainer" parent="Stuff"]
+margin_top = 704.0
+margin_right = 548.0
+margin_bottom = 770.0
+alignment = 1
+
+[node name="Confirm" type="ToolButton" parent="Stuff/ExitButtons"]
+margin_right = 270.0
+margin_bottom = 66.0
+size_flags_horizontal = 3
+disabled = true
+toggle_mode = true
+group = SubResource( 4 )
+text = "Confirm"
+script = ExtResource( 4 )
+Value = "confirm"
+
+[node name="MarginContainer" type="MarginContainer" parent="Stuff/ExitButtons"]
+margin_left = 274.0
+margin_right = 274.0
+margin_bottom = 66.0
+
+[node name="Back" type="ToolButton" parent="Stuff/ExitButtons"]
+margin_left = 278.0
+margin_right = 548.0
+margin_bottom = 66.0
+size_flags_horizontal = 3
+toggle_mode = true
+group = SubResource( 4 )
+text = "Back"
+script = ExtResource( 4 )
+Value = "back"
