@@ -45,12 +45,13 @@
     :nav-grid /grid-proto
 ] with u< do-block u> ;
 
-: /has? ( coord -- t/f ) dup it .cells .has(*) [ drop true ] [ "Cannot path to point: " swap str(**) err! false ] if-else ;
-: /id ( coord -- id ) it .cells get ;
+: #no-path-err! ( pt -- err ) "Cannot path to point: " swap str(**) err! ;
 : /cells ( -- cells ) it .cells ;
+: /has? ( coord -- t/f ) dup /cells .has(*) [ drop true ] [ #no-path-err! false ] if-else ;
+: /id ( coord -- id ) /cells get ;
 : /path ( pt1 pt2 -- path ) /cells .get_point_path(**) ;
 :: nav-grid/path { from to grid -- pts } *grid [
-        *from /has? *to /has? and [ *from /id *to /id /path ] [ <> PoolVector2Array() ] if-else
+        *from /has? *to /has? and [ *from /id *to /id /path ] [ <> PoolVector2Array(*) ] if-else
     ] with!
 ;
 
@@ -63,16 +64,18 @@
     *val *dict *key get .append(*)! ;
 
 : /clear ( id -- id ) dup false swap it .blocked put ;
-: /blocked ( id -- id ) dup false swap it .blocked put ;
-: /spawn-tag ( id tag -- id ) dup-under swap it .spawn-tiles <>put put ;
+: /blocked ( id -- id ) dup true swap it .blocked put ;
+: /spawn-tag ( id tag -- id ) dup-under swap it .spawn-tiles <>put ;
 
-dict [ dict >>blocked dict >>spawn_tiles ] with 
+[ 
+dict >>blocked 
+dict >>spawn_tiles 
 0 dup const: TILE_DIRT /clear
 iota const: TILE_STONE  /clear
 iota const: TILE_MOSS  /clear :moss /spawn-tag
 iota const: TILE_PILLAR /blocked
      const: TILE_WATER  /clear :floor-water /spawn-tag
-const: TILE_META
+] <dict> const: TILE_META
 
 < 
 TILE_DIRT TILE_DIRT TILE_DIRT TILE_STONE TILE_MOSS TILE_PILLAR TILE_WATER
@@ -80,29 +83,24 @@ TILE_DIRT TILE_DIRT TILE_DIRT TILE_STONE TILE_MOSS TILE_PILLAR TILE_WATER
 
 : d<tile> TILES d<> ;
 
-: passble? TILE_PILLAR eq? ;
-: /spawns? TILE_META .spawn_tiles .has(*) ;
+: #passble? TILE_META .blocked .has(*) not ;
+: #spawns? TILE_META .spawn_tiles .has(*) ;
 : /tiles it .tiles ;
-: /nav it .nav ;
-: /init-floor-grids 
-   10 range(*) [ =x
-    10 range(*) [ =y 
-        *x *y Vector2(**) =pos 
-        d<tile> =t-id
-        *t-id passable? *pos /nav grid/set
-        *t-id *pos /tiles grid/set
-        *t-id /spawns? [ *ti-id /spawn /mobs *pos put ] if
-         
-    ] each
-   ] each ;
+:: /init-floor-grids 
+    16 range(*) [ Vector2(**) d<tile> { pos t-id }
+        *t-id #passable? *pos nav>> grid/set
+        *t-id *pos tiles>> grid/set
+        *t-id #spawns? [ *t-id /spawn mobs>> *pos put ] if
+    ] each/square ;
 
-: <floor> ( -- )
-    dict [
-       [ ] <nav-grid> >>nav
-       [ ] <tile-grid> >>tiles
+: <floor> ( -- flor )
+    [
+       [] <nav-grid> >>nav
+       [] <tile-grid> >>tiles
        dict >>mobs
        /init-floor-grids
-    ] with 
+       nav>> nav-grid/connect-all
+    ] <dict> 
 ;  
 
 

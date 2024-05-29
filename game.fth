@@ -2,21 +2,6 @@
 
 : $ ( str -- node ) .get_node(*) ; 
 
-: UP 0 -1 Vector2(**) ; : DOWN 0 1 Vector2(**) ;
-: RIGHT 1 0 Vector2(**) ; : LEFT -1 0 Vector2(**) ;
-
-: <equips> dict [
-    "" >>mainhand
-    "" >>offhand
-    "" >>torso
-    "" >>trinket
-] with ;
-
-: //player.init
-    [ 0 >>currency
-      <equips> >>equips 
-      10 <bag> >>bag 
-    ] <dict> //game >player ;
 
 : //player //game .player ;
 : /mainhand.equip ( item -- ) //player .equips >mainhand ; 

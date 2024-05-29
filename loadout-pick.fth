@@ -17,11 +17,11 @@
 :: pick-loadout { cancel-to -- form }
     "res://LoadoutPicker.tscn" switch-scene
     ( :Stuff/Weapons/BtnDagger self .scene .get_node(*} .group print )
-    dict [ <> >>cleanup 
+     [ <> >>cleanup 
       :Stuff/Weapons/BtnDagger $ .group :pressed :->weapon vm-bind /retain
       :Stuff/Tools/BtnPot $ .group :pressed :->tool vm-bind /retain
       :Stuff/Magic/BtnMosswitch $ .group :pressed :->magic vm-bind /retain
       :Stuff/ExitButtons/Confirm $ .group ~pressed .Value "back" eq? [ *cancel-to < > become ] if
       /drop-all
-    ] with
+    ] <dict>
 ;

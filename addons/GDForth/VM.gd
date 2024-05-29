@@ -95,12 +95,14 @@ const _stdlib = """
 : nip swap drop ;
 : over shuf: ab aba ;
 : rot shuf: abc bca ;
+: -rot shuf: abc cab ;
 : dup-under u< dup u> ;
 : if ( block -- quot/' ) [ ] if-else ;
 : ? ( c t f -- t/f ) rot [ drop ] [ nip ] if-else ;
 : <> 0 narray ;
 : < stack-size u< ;
 : > stack-size u> - narray ;
+: [] ( -- quot ) [ ] ;
 : 2dup shuf: ab abab ;
 : pos? 0 gt? ;
 : 2drop drop drop ;

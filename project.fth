@@ -1,7 +1,9 @@
 load: ./prelude.fth
+load: ./atlas.fth
 load: ./bag.fth
 load: ./cook.fth
 load: ./items.fth
+load: ./player.fth
 load: ./loadout-pick.fth
 load: ./magic.fth
 load: ./game.fth
